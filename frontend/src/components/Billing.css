@@ -1,0 +1,374 @@
+.billing-container {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+}
+
+.billing-layout {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 20px;
+}
+
+.search-section {
+  position: relative;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 2px solid #667eea;
+  padding: 10px 15px;
+  border-radius: 5px;
+  background: white;
+}
+
+.search-box input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 16px;
+}
+
+.search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-top: none;
+  max-height: 300px;
+  overflow-y: auto;
+  border-radius: 0 0 5px 5px;
+  z-index: 100;
+}
+
+.search-result-item {
+  padding: 15px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.search-result-item:hover {
+  background-color: #f9f9f9;
+}
+
+.search-result-item strong {
+  display: block;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.search-result-item p {
+  margin: 0;
+  color: #999;
+  font-size: 14px;
+}
+
+.success-message {
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  color: #155724;
+  padding: 15px;
+  border-radius: 5px;
+  margin-top: 10px;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cart-section {
+  background: #f9f9f9;
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid #e0e0e0;
+}
+
+.cart-section h3 {
+  margin-top: 0;
+  color: #333;
+}
+
+.cart-items {
+  min-height: 200px;
+  max-height: 400px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+
+.empty-cart {
+  text-align: center;
+  color: #999;
+  padding: 40px 20px;
+}
+
+.cart-item {
+  background: white;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  border-left: 4px solid #667eea;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.item-details {
+  flex: 1;
+}
+
+.item-details strong {
+  display: block;
+  color: #333;
+}
+
+.item-details p {
+  margin: 5px 0 0 0;
+  color: #999;
+  font-size: 14px;
+}
+
+.item-controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.qty-input {
+  width: 50px;
+  padding: 5px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  text-align: center;
+}
+
+.remove-btn {
+  background: #ff6b6b;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.item-total {
+  font-weight: 600;
+  color: #667eea;
+  min-width: 80px;
+  text-align: right;
+}
+
+.billing-summary {
+  border-top: 2px solid #e0e0e0;
+  padding-top: 15px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.summary-row.total {
+  font-size: 18px;
+  font-weight: 700;
+  color: #667eea;
+  border-top: 1px solid #e0e0e0;
+  padding-top: 10px;
+  margin-top: 10px;
+}
+
+.summary-row.discount {
+  color: #ff6b6b;
+}
+
+.discount-section,
+.payment-section {
+  margin: 15px 0;
+  padding: 10px 0;
+}
+
+.discount-section label,
+.payment-section label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.discount-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.discount-controls select,
+.discount-controls input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+}
+
+.payment-options {
+  display: flex;
+  gap: 15px;
+}
+
+.payment-options label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  cursor: pointer;
+}
+
+.payment-options input {
+  cursor: pointer;
+}
+
+.print-btn,
+.place-order-btn {
+  width: 100%;
+  padding: 15px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 15px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.print-btn {
+  background: #2a9d8f;
+}
+
+.print-btn:hover:not(:disabled),
+.place-order-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.place-order-btn:disabled,
+.print-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.receipt-preview {
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 15px;
+  margin-top: 20px;
+}
+
+.receipt-preview h4 {
+  margin: 0 0 10px;
+  color: #333;
+}
+
+.receipt-items {
+  border-top: 1px solid #e0e0e0;
+  margin-top: 10px;
+  padding-top: 10px;
+}
+
+.receipt-item,
+.receipt-summary div {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  color: #555;
+}
+
+.receipt-summary {
+  border-top: 1px dashed #ccc;
+  padding-top: 10px;
+  margin-top: 10px;
+}
+
+@media print {
+  @page { size: A4 portrait; margin: 10mm; }
+
+  /* Hide everything, then show only the receipt preview to avoid extra headers/footers */
+  body * { visibility: hidden; }
+
+  .receipt-preview, .receipt-preview * {
+    visibility: visible;
+  }
+
+  /* Make receipt occupy printable area and remove visual chrome */
+  .receipt-preview {
+    position: absolute;
+    left: 10mm;
+    top: 10mm;
+    right: 10mm;
+    width: calc(100% - 20mm);
+    box-shadow: none;
+    background: #fff;
+    border: none;
+    padding: 8px 10px;
+    font-size: 12px;
+    color: #000;
+  }
+
+  /* Compact receipt rows for better density */
+  .receipt-item, .receipt-summary div {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  /* Avoid splitting items across pages */
+  .receipt-item, .receipt-summary {
+    page-break-inside: avoid;
+  }
+
+  /* Hide interactive elements that might still be visible */
+  .search-section,
+  .item-controls,
+  .remove-btn,
+  .place-order-btn,
+  .payment-section,
+  .discount-controls,
+  .search-results,
+  .print-btn,
+  nav,
+  header,
+  footer {
+    display: none !important;
+  }
+
+  /* Ensure body background is white on print */
+  body { background: #fff; }
+}
+
+@media (max-width: 1024px) {
+  .billing-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .cart-section {
+    order: -1;
+  }
+}

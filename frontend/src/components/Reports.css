@@ -1,0 +1,129 @@
+.reports-container {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.reports-container h2 {
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.report-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.report-tabs button {
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-weight: 600;
+  color: #999;
+  transition: all 0.3s;
+}
+
+.report-tabs button.active {
+  color: #667eea;
+  border-bottom-color: #667eea;
+}
+
+.report-tabs button:hover {
+  color: #667eea;
+}
+
+.report-filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #f9f9f9;
+  border-radius: 5px;
+  flex-wrap: wrap;
+}
+
+.report-filters input,
+.report-filters select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+.report-filters input:focus,
+.report-filters select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+}
+
+.report-filters button {
+  padding: 8px 20px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.report-filters button:hover:not(:disabled) {
+  background: #5568d3;
+}
+
+.report-filters button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.download-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.report-data {
+  overflow-x: auto;
+}
+
+.report-data table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.report-data thead {
+  background: #f9f9f9;
+}
+
+.report-data th {
+  padding: 15px;
+  text-align: left;
+  font-weight: 600;
+  color: #333;
+  border-bottom: 2px solid #ddd;
+}
+
+.report-data td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.report-data tbody tr:hover {
+  background-color: #f5f5f5;
+}
+
+.no-data {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+  background: #f9f9f9;
+  border-radius: 5px;
+  margin-top: 20px;
+}
