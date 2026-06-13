@@ -3,23 +3,19 @@ const router = express.Router();
 const authMiddleware = require('../middleware/auth');
 const pool = require('../db');
 const multer = require('multer');
-const fs = require('fs');
 const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
 
-const uploadsDir = path.join(__dirname, '..', 'uploads');
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
+// Supabase client - requires env vars SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+let supabase = null;
+if (supabaseUrl && supabaseKey) {
+  supabase = createClient(supabaseUrl, supabaseKey);
+}
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadsDir);
-  },
-  filename: function (req, file, cb) {
-    const ext = path.extname(file.originalname);
-    const name = `logo_${Date.now()}${ext}`;
-    cb(null, name);
-  }
-});
-
+// Use memory storage to get file buffer, then upload to Supabase Storage
+const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 // Get settings (assume single row)
@@ -41,26 +37,37 @@ router.post('/', authMiddleware, upload.single('logo'), async (req, res) => {
     return res.status(403).json({ message: 'Forbidden: insufficient privileges' });
   }
   const shopName = req.body.shop_name || '';
-  const logoFile = req.file;
+  const logoFile = req.file; // multer memory storage => buffer in logoFile.buffer
   try {
     const existing = await pool.query('SELECT * FROM settings ORDER BY id LIMIT 1');
     if (existing.rows.length === 0) {
-      const logoPath = logoFile ? `/uploads/${logoFile.filename}` : null;
+      let logoPath = null;
+      if (logoFile && supabase) {
+        const ext = path.extname(logoFile.originalname) || '.png';
+        const name = `logo_${Date.now()}${ext}`;
+        const { data, error: upErr } = await supabase.storage.from('uploads').upload(name, logoFile.buffer, { contentType: logoFile.mimetype, upsert: false });
+        if (upErr) console.error('Supabase upload error', upErr);
+        else {
+          const url = supabase.storage.from('uploads').getPublicUrl(data.path).data.publicUrl;
+          logoPath = url;
+        }
+      }
       const insert = await pool.query('INSERT INTO settings (shop_name, logo_path) VALUES ($1, $2) RETURNING *', [shopName, logoPath]);
       return res.json(insert.rows[0]);
     }
 
     const current = existing.rows[0];
     let logoPath = current.logo_path;
-    if (logoFile) {
-      // remove previous file if present
-      if (logoPath) {
-        const prev = path.join(__dirname, '..', logoPath.replace(/^\//, ''));
-        if (fs.existsSync(prev)) {
-          try { fs.unlinkSync(prev); } catch (e) { console.warn('Could not remove old logo', e); }
-        }
+    if (logoFile && supabase) {
+      // upload new logo to Supabase Storage
+      const ext = path.extname(logoFile.originalname) || '.png';
+      const name = `logo_${Date.now()}${ext}`;
+      const { data, error: upErr } = await supabase.storage.from('uploads').upload(name, logoFile.buffer, { contentType: logoFile.mimetype, upsert: false });
+      if (upErr) console.error('Supabase upload error', upErr);
+      else {
+        const url = supabase.storage.from('uploads').getPublicUrl(data.path).data.publicUrl;
+        logoPath = url;
       }
-      logoPath = `/uploads/${logoFile.filename}`;
     }
 
     const update = await pool.query(

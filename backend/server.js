@@ -11,7 +11,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 const path = require('path');
-// serve uploaded logos
+// serve uploaded logos (local dev). In production uploads will use Supabase Storage.
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Import routes
