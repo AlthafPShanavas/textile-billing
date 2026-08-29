@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FiPlus, FiEdit2, FiTrash2, FiPackage, FiSearch, FiX } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiPackage, FiSearch, FiX, FiTag } from 'react-icons/fi';
 import { productAPI } from '../api';
 import { Card } from './ui/Card';
 import Button from './ui/Button';
@@ -10,6 +10,8 @@ import EmptyState from './ui/EmptyState';
 import { PageLoader } from './ui/Spinner';
 import { useToast, useConfirm } from './ui/Feedback';
 import { formatCurrency } from '../utils/format';
+import { printBarcodeLabel } from '../utils/barcodeLabel';
+import { useSettings } from '../context/SettingsContext';
 
 const emptyProduct = { name: '', code: '', category: '', description: '', price: '', gst_rate: '' };
 const emptyVariant = { size: '', color: '', sku: '', quantity: 0 };
@@ -24,8 +26,10 @@ const Products = () => {
   const [variants, setVariants] = useState([{ ...emptyVariant }]);
   const [imageFile, setImageFile] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [labelCopies, setLabelCopies] = useState({});
   const toast = useToast();
   const confirm = useConfirm();
+  const { settings } = useSettings();
 
   useEffect(() => {
     fetchProducts();
@@ -300,8 +304,33 @@ const Products = () => {
                     <span>
                       {[v.size, v.color].filter(Boolean).join(' / ') || 'Default'} — <span className="text-slate-400">{v.sku}</span>
                     </span>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <Badge tone={v.quantity < 10 ? 'red' : 'slate'}>{v.quantity} in stock</Badge>
+                      <input
+                        type="number"
+                        min="1"
+                        title="Copies"
+                        value={labelCopies[v.id] ?? 1}
+                        onChange={(e) => setLabelCopies((prev) => ({ ...prev, [v.id]: e.target.value }))}
+                        className="w-12 rounded border border-slate-300 px-1 py-0.5 text-xs"
+                      />
+                      <button
+                        onClick={() =>
+                          printBarcodeLabel({
+                            shopName: settings?.shop_name,
+                            productName: editing.name,
+                            size: v.size,
+                            color: v.color,
+                            price: v.price_override || editing.price,
+                            sku: v.sku,
+                            copies: parseInt(labelCopies[v.id] || 1, 10),
+                          })
+                        }
+                        className="text-slate-500 hover:text-brand-600"
+                        title="Print barcode label"
+                      >
+                        <FiTag />
+                      </button>
                       <button onClick={() => handleDeleteVariant(v.id)} className="text-red-500 hover:text-red-700">
                         <FiX />
                       </button>

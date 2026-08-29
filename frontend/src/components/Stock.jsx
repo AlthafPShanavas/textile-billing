@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FiBox, FiSearch, FiSave } from 'react-icons/fi';
 import { stockAPI } from '../api';
 import { Card } from './ui/Card';
@@ -16,6 +16,9 @@ const Stock = () => {
   const [search, setSearch] = useState('');
   const [edits, setEdits] = useState({}); // variant_id -> new quantity
   const [savingId, setSavingId] = useState(null);
+  const [receiveMode, setReceiveMode] = useState(false);
+  const searchInputRef = useRef();
+  const qtyInputRefs = useRef({});
   const toast = useToast();
 
   useEffect(() => {
@@ -54,6 +57,40 @@ const Stock = () => {
     return Array.from(map.values());
   }, [stocks, search]);
 
+  // Once a scan (or typed search) narrows the list to exactly one variant, focus its quantity
+  // field so a person can immediately type the new count — no clicking required.
+  useEffect(() => {
+    const totalRows = grouped.reduce((sum, g) => sum + g.rows.length, 0);
+    if (!receiveMode && search.trim() && totalRows === 1) {
+      const variantId = grouped[0].rows[0].variant_id;
+      const el = qtyInputRefs.current[variantId];
+      el?.focus();
+      el?.select();
+    }
+  }, [grouped, search, receiveMode]);
+
+  // A barcode scanner "types" the code then sends Enter. In Receive Mode, scanning a variant's
+  // barcode adds 1 unit immediately — handy for counting garments in as a delivery arrives.
+  const handleSearchKeyDown = async (e) => {
+    if (e.key !== 'Enter' || !receiveMode) return;
+    e.preventDefault();
+    const term = search.trim().toLowerCase();
+    if (!term) return;
+    const match = stocks.find((s) => s.sku.toLowerCase() === term);
+    if (!match) {
+      toast('No product found for that code', 'error');
+      return;
+    }
+    try {
+      const res = await stockAPI.adjust({ variant_id: match.variant_id, quantity: 1 });
+      toast(`${match.product_name} (${match.sku}) +1 → now ${res.data.stock.quantity}`, 'success');
+      setSearch('');
+      fetchStocks();
+    } catch (err) {
+      toast('Failed to update stock', 'error');
+    }
+  };
+
   const handleSave = async (variantId) => {
     const value = edits[variantId];
     if (value === undefined || value === '') return;
@@ -81,9 +118,30 @@ const Stock = () => {
         <p className="mt-1 text-sm text-slate-500">Quantities are tracked per size/color variant.</p>
       </div>
 
-      <div className="relative max-w-sm">
-        <FiSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-        <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search products..." className="pl-9" />
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative max-w-sm flex-1">
+          <FiSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Input
+            ref={searchInputRef}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
+            placeholder={receiveMode ? 'Scan a barcode to add 1 unit...' : 'Search products, or scan a barcode...'}
+            className="pl-9"
+          />
+        </div>
+        <label className="flex items-center gap-2 text-sm text-slate-600">
+          <input
+            type="checkbox"
+            checked={receiveMode}
+            onChange={(e) => {
+              setReceiveMode(e.target.checked);
+              setSearch('');
+              searchInputRef.current?.focus();
+            }}
+          />
+          Receive Mode (scan to add +1 stock)
+        </label>
       </div>
 
       {loading ? (
@@ -122,6 +180,7 @@ const Stock = () => {
                         <td className="px-5 py-2.5">
                           <div className="flex items-center gap-2">
                             <input
+                              ref={(el) => (qtyInputRefs.current[row.variant_id] = el)}
                               type="number"
                               min="0"
                               className="w-20 rounded-lg border border-slate-300 px-2 py-1 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"

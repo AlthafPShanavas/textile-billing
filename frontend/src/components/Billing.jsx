@@ -8,6 +8,7 @@ import EmptyState from './ui/EmptyState';
 import { useToast } from './ui/Feedback';
 import { useSettings } from '../context/SettingsContext';
 import { formatCurrency } from '../utils/format';
+import { printHtml } from '../utils/printWindow';
 
 const buildReceiptHtml = ({ settings, mode, invoiceNumber, date, items, subtotal, discountAmount, taxRate, taxAmount, total, paymentMethod, customer }) => {
   const style = `
@@ -83,22 +84,6 @@ const openWhatsApp = (phone, text) => {
   window.open(url, '_blank');
 };
 
-const printHtml = (html) => {
-  const printWindow = window.open('', '_blank', 'width=700,height=800');
-  if (!printWindow) {
-    alert('Pop-up blocked. Please allow pop-ups for this site to print.');
-    return;
-  }
-  printWindow.document.open();
-  printWindow.document.write(html);
-  printWindow.document.close();
-  printWindow.focus();
-  setTimeout(() => {
-    printWindow.print();
-    setTimeout(() => printWindow.close(), 500);
-  }, 300);
-};
-
 const Billing = () => {
   const [mode, setMode] = useState('sale'); // 'sale' | 'estimate'
   const [products, setProducts] = useState([]);
@@ -163,6 +148,35 @@ const Billing = () => {
     setSearchTerm('');
     setProducts([]);
     searchInputRef.current?.focus();
+  };
+
+  // A barcode scanner behaves like a keyboard: it "types" the code into whatever's focused,
+  // then sends Enter. Here we bypass the debounced live-search and look for an exact SKU
+  // match on Enter, so a scan adds straight to the cart instead of just filtering results.
+  const handleSearchKeyDown = async (e) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    const term = searchTerm.trim();
+    if (!term) return;
+    try {
+      const res = await productAPI.getAll({ search: term });
+      let matched = null;
+      for (const product of res.data) {
+        const variant = product.variants.find((v) => v.sku.toLowerCase() === term.toLowerCase());
+        if (variant) {
+          matched = { product, variant };
+          break;
+        }
+      }
+      if (matched) {
+        addVariantToCart(matched.product, matched.variant);
+      } else {
+        setProducts(res.data);
+        if (res.data.length === 0) toast('No product found for that code', 'error');
+      }
+    } catch (err) {
+      toast('Search failed', 'error');
+    }
   };
 
   const addManualToCart = () => {
@@ -332,7 +346,8 @@ const Billing = () => {
                   ref={searchInputRef}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search products by name, code or SKU..."
+                  onKeyDown={handleSearchKeyDown}
+                  placeholder="Search, or scan a barcode..."
                   className="pl-9"
                 />
               </div>
