@@ -1,7 +1,18 @@
 import React, { useState } from 'react';
+import { FiDownload, FiBarChart2 } from 'react-icons/fi';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { reportAPI } from '../api';
-import { FiDownload } from 'react-icons/fi';
-import './Reports.css';
+import { Card, CardBody, CardHeader } from './ui/Card';
+import Button from './ui/Button';
+import { Input, Select } from './ui/Field';
+import EmptyState from './ui/EmptyState';
+import { formatCurrency } from '../utils/format';
+
+const reportTabs = [
+  { key: 'daily', label: 'Daily' },
+  { key: 'monthly', label: 'Monthly' },
+  { key: 'yearly', label: 'Yearly' },
+];
 
 const Reports = () => {
   const [activeReport, setActiveReport] = useState('daily');
@@ -11,165 +22,167 @@ const Reports = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [loading, setLoading] = useState(false);
 
-  const handleGenerateDailyReport = async () => {
+  const generate = async () => {
     setLoading(true);
     try {
-      const response = await reportAPI.getDaily(selectedDate);
-      setReportData(response.data);
+      let res;
+      if (activeReport === 'daily') res = await reportAPI.getDaily(selectedDate);
+      else if (activeReport === 'monthly') res = await reportAPI.getMonthly(selectedYear, selectedMonth);
+      else res = await reportAPI.getYearly(selectedYear);
+      setReportData(res.data);
     } catch (error) {
-      alert('Error generating report: ' + error.response?.data?.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGenerateMonthlyReport = async () => {
-    setLoading(true);
-    try {
-      const response = await reportAPI.getMonthly(selectedYear, selectedMonth);
-      setReportData(response.data);
-    } catch (error) {
-      alert('Error generating report: ' + error.response?.data?.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGenerateYearlyReport = async () => {
-    setLoading(true);
-    try {
-      const response = await reportAPI.getYearly(selectedYear);
-      setReportData(response.data);
-    } catch (error) {
-      alert('Error generating report: ' + error.response?.data?.message);
+      console.error('Error generating report:', error);
     } finally {
       setLoading(false);
     }
   };
 
   const downloadCSV = () => {
-    const headers = Object.keys(reportData[0] || {}).join(',');
-    const rows = reportData.map(row => Object.values(row).join(',')).join('\n');
+    if (reportData.length === 0) return;
+    const headers = Object.keys(reportData[0]).join(',');
+    const rows = reportData.map((row) => Object.values(row).join(',')).join('\n');
     const csv = headers + '\n' + rows;
-    
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `report-${activeReport}.csv`;
     a.click();
+    window.URL.revokeObjectURL(url);
   };
 
+  const totalSales = reportData.reduce((sum, r) => sum + Number(r.total_sales || 0), 0);
+  const totalTax = reportData.reduce((sum, r) => sum + Number(r.total_tax || 0), 0);
+  const totalOrders = reportData.reduce((sum, r) => sum + Number(r.total_orders || 0), 0);
+
+  const chartData = reportData.map((r) => ({
+    label: r.date ? new Date(r.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : `Month ${r.month}`,
+    sales: Number(r.total_sales || 0),
+  }));
+
   return (
-    <div className="reports-container">
-      <h2>Reports</h2>
-
-      <div className="report-tabs">
-        <button
-          className={activeReport === 'daily' ? 'active' : ''}
-          onClick={() => setActiveReport('daily')}
-        >
-          Daily Report
-        </button>
-        <button
-          className={activeReport === 'monthly' ? 'active' : ''}
-          onClick={() => setActiveReport('monthly')}
-        >
-          Monthly Report
-        </button>
-        <button
-          className={activeReport === 'yearly' ? 'active' : ''}
-          onClick={() => setActiveReport('yearly')}
-        >
-          Yearly Report
-        </button>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold text-slate-900">Reports</h1>
+        <p className="mt-1 text-sm text-slate-500">Sales, discounts and GST collected.</p>
       </div>
 
-      <div className="report-filters">
-        {activeReport === 'daily' && (
-          <>
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-            />
-            <button onClick={handleGenerateDailyReport} disabled={loading}>
-              {loading ? 'Generating...' : 'Generate Report'}
-            </button>
-          </>
-        )}
+      <Card>
+        <CardBody>
+          <div className="mb-4 flex flex-wrap gap-2">
+            {reportTabs.map((t) => (
+              <button
+                key={t.key}
+                onClick={() => {
+                  setActiveReport(t.key);
+                  setReportData([]);
+                }}
+                className={`rounded-lg px-4 py-1.5 text-sm font-medium ${
+                  activeReport === t.key ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
 
-        {activeReport === 'monthly' && (
-          <>
-            <select value={selectedMonth} onChange={(e) => setSelectedMonth(parseInt(e.target.value))}>
-              {[...Array(12)].map((_, i) => (
-                <option key={i} value={i + 1}>{new Date(2024, i).toLocaleDateString('en-US', { month: 'long' })}</option>
-              ))}
-            </select>
-            <input
-              type="number"
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-              min="2020"
-              max="2030"
-            />
-            <button onClick={handleGenerateMonthlyReport} disabled={loading}>
-              {loading ? 'Generating...' : 'Generate Report'}
-            </button>
-          </>
-        )}
-
-        {activeReport === 'yearly' && (
-          <>
-            <input
-              type="number"
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-              min="2020"
-              max="2030"
-            />
-            <button onClick={handleGenerateYearlyReport} disabled={loading}>
-              {loading ? 'Generating...' : 'Generate Report'}
-            </button>
-          </>
-        )}
-
-        {reportData.length > 0 && (
-          <button className="download-btn" onClick={downloadCSV}>
-            <FiDownload /> Download CSV
-          </button>
-        )}
-      </div>
+          <div className="flex flex-wrap items-end gap-3">
+            {activeReport === 'daily' && (
+              <Input label="Date" type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
+            )}
+            {activeReport === 'monthly' && (
+              <>
+                <Select label="Month" value={selectedMonth} onChange={(e) => setSelectedMonth(parseInt(e.target.value))}>
+                  {[...Array(12)].map((_, i) => (
+                    <option key={i} value={i + 1}>
+                      {new Date(2024, i).toLocaleDateString('en-US', { month: 'long' })}
+                    </option>
+                  ))}
+                </Select>
+                <Input label="Year" type="number" value={selectedYear} onChange={(e) => setSelectedYear(parseInt(e.target.value))} />
+              </>
+            )}
+            {activeReport === 'yearly' && (
+              <Input label="Year" type="number" value={selectedYear} onChange={(e) => setSelectedYear(parseInt(e.target.value))} />
+            )}
+            <Button onClick={generate} loading={loading}>
+              Generate Report
+            </Button>
+            {reportData.length > 0 && (
+              <Button variant="secondary" onClick={downloadCSV}>
+                <FiDownload /> Download CSV
+              </Button>
+            )}
+          </div>
+        </CardBody>
+      </Card>
 
       {reportData.length > 0 && (
-        <div className="report-data">
-          <table>
-            <thead>
-              <tr>
-                {Object.keys(reportData[0]).map(key => (
-                  <th key={key}>{key.replace(/_/g, ' ').toUpperCase()}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {reportData.map((row, index) => (
-                <tr key={index}>
-                  {Object.values(row).map((value, i) => (
-                    <td key={i}>
-                      {typeof value === 'number' ? value.toFixed(2) : value}
-                    </td>
+        <>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <Card className="p-5">
+              <p className="text-sm text-slate-500">Total Sales</p>
+              <p className="text-xl font-semibold text-slate-900">{formatCurrency(totalSales)}</p>
+            </Card>
+            <Card className="p-5">
+              <p className="text-sm text-slate-500">GST Collected</p>
+              <p className="text-xl font-semibold text-slate-900">{formatCurrency(totalTax)}</p>
+            </Card>
+            <Card className="p-5">
+              <p className="text-sm text-slate-500">Orders</p>
+              <p className="text-xl font-semibold text-slate-900">{totalOrders}</p>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader title="Sales trend" />
+            <CardBody>
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <XAxis dataKey="label" tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} width={70} />
+                  <Tooltip formatter={(v) => formatCurrency(v)} />
+                  <Bar dataKey="sales" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardHeader title="Report data" />
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b border-slate-100 text-xs uppercase text-slate-400">
+                  <tr>
+                    {Object.keys(reportData[0]).map((key) => (
+                      <th key={key} className="px-5 py-3">
+                        {key.replace(/_/g, ' ')}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {reportData.map((row, index) => (
+                    <tr key={index}>
+                      {Object.values(row).map((value, i) => (
+                        <td key={i} className="px-5 py-2.5 text-slate-600">
+                          {typeof value === 'number' ? value.toFixed(2) : String(value ?? '—')}
+                        </td>
+                      ))}
+                    </tr>
                   ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </>
       )}
 
       {reportData.length === 0 && (
-        <div className="no-data">
-          Select filters and click "Generate Report" to view data
-        </div>
+        <Card>
+          <EmptyState icon={FiBarChart2} title="No report generated yet" message="Pick a range above and click Generate Report." />
+        </Card>
       )}
     </div>
   );

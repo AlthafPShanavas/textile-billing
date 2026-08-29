@@ -6,7 +6,8 @@ require('dotenv').config();
 const app = express();
 
 // Middleware
-app.use(cors());
+const corsOrigin = process.env.CORS_ORIGIN;
+app.use(cors(corsOrigin ? { origin: corsOrigin.split(',') } : {}));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -23,6 +24,8 @@ const staffRoutes = require('./routes/staff');
 const reportRoutes = require('./routes/reports');
 const paymentRoutes = require('./routes/payments');
 const settingsRoutes = require('./routes/settings');
+const customerRoutes = require('./routes/customers');
+const whatsappRoutes = require('./routes/whatsapp');
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -33,6 +36,8 @@ app.use('/api/staff', staffRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/customers', customerRoutes);
+app.use('/api/whatsapp', whatsappRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
